@@ -31,6 +31,7 @@ import xml.parsers.expat
 
 try:
     import gzip
+
     GZIP_BASE = gzip.GzipFile
 except ImportError:
     gzip = None
@@ -71,6 +72,7 @@ except ImportError:
 
 try:
     import xml.etree.ElementTree as ET
+
     try:
         from xml.etree.ElementTree import _Element as ET_Element
     except ImportError:
@@ -78,6 +80,7 @@ try:
 except ImportError:
     from xml.dom import minidom as DOM
     from xml.parsers.expat import ExpatError
+
     ET = None
 
 try:
@@ -135,22 +138,26 @@ except ImportError:
 try:
     from argparse import ArgumentParser as ArgParser
     from argparse import SUPPRESS as ARG_SUPPRESS
+
     PARSER_TYPE_INT = int
     PARSER_TYPE_STR = str
     PARSER_TYPE_FLOAT = float
 except ImportError:
     from optparse import OptionParser as ArgParser
     from optparse import SUPPRESS_HELP as ARG_SUPPRESS
+
     PARSER_TYPE_INT = 'int'
     PARSER_TYPE_STR = 'string'
     PARSER_TYPE_FLOAT = 'float'
 
 try:
     from cStringIO import StringIO
+
     BytesIO = None
 except ImportError:
     try:
         from StringIO import StringIO
+
         BytesIO = None
     except ImportError:
         from io import StringIO, BytesIO
@@ -161,10 +168,12 @@ except ImportError:
     import builtins
     from io import TextIOWrapper, FileIO
 
+
     class _Py3Utf8Output(TextIOWrapper):
         """UTF-8 encoded wrapper around stdout for py3, to override
         ASCII stdout
         """
+
         def __init__(self, f, **kwargs):
             buf = FileIO(f.fileno(), 'w')
             super(_Py3Utf8Output, self).__init__(
@@ -177,6 +186,7 @@ except ImportError:
             super(_Py3Utf8Output, self).write(s)
             self.flush()
 
+
     _py3_print = getattr(builtins, 'print')
     try:
         _py3_utf8_stdout = _Py3Utf8Output(sys.stdout)
@@ -187,9 +197,11 @@ except ImportError:
         _py3_utf8_stdout = sys.stdout
         _py3_utf8_stderr = sys.stderr
 
+
     def to_utf8(v):
         """No-op encode to utf-8 for py3"""
         return v
+
 
     def print_(*args, **kwargs):
         """Wrapper function for py3 to print, with a utf-8 encoded stdout"""
@@ -201,12 +213,14 @@ except ImportError:
 else:
     del __builtin__
 
+
     def to_utf8(v):
         """Encode value to utf-8 if possible for py2"""
         try:
             return v.encode('utf8', 'strict')
         except AttributeError:
             return v
+
 
     def print_(*args, **kwargs):
         """The new-style print function for Python 2.4 and 2.5.
@@ -233,6 +247,7 @@ else:
                 data = data.encode(encoding, errors)
             fp.write(data)
             fp.flush()
+
         want_unicode = False
         sep = kwargs.pop("sep", None)
         if sep is not None:
@@ -272,14 +287,15 @@ else:
 # Exception "constants" to support Python 2 through Python 3
 try:
     import ssl
+
     try:
         CERT_ERROR = (ssl.CertificateError,)
     except AttributeError:
         CERT_ERROR = tuple()
 
     HTTP_ERRORS = (
-        (HTTPError, URLError, socket.error, ssl.SSLError, BadStatusLine) +
-        CERT_ERROR
+            (HTTPError, URLError, socket.error, ssl.SSLError, BadStatusLine) +
+            CERT_ERROR
     )
 except ImportError:
     ssl = None
@@ -418,6 +434,7 @@ class SpeedtestHTTPConnection(HTTPConnection):
     """Custom HTTPConnection to support source_address across
     Python 2.4 - Python 3
     """
+
     def __init__(self, *args, **kwargs):
         source_address = kwargs.pop('source_address', None)
         timeout = kwargs.pop('timeout', 10)
@@ -522,6 +539,7 @@ def _build_connection(connection, source_address, timeout, context=None):
     Called from ``http(s)_open`` methods of ``SpeedtestHTTPHandler`` or
     ``SpeedtestHTTPSHandler``
     """
+
     def inner(host, **kwargs):
         kwargs.update({
             'source_address': source_address,
@@ -530,6 +548,7 @@ def _build_connection(connection, source_address, timeout, context=None):
         if context:
             kwargs['context'] = context
         return connection(host, **kwargs)
+
     return inner
 
 
@@ -537,6 +556,7 @@ class SpeedtestHTTPHandler(AbstractHTTPHandler):
     """Custom ``HTTPHandler`` that can build a ``HTTPConnection`` with the
     args we need for ``source_address`` and ``timeout``
     """
+
     def __init__(self, debuglevel=0, source_address=None, timeout=10):
         AbstractHTTPHandler.__init__(self, debuglevel)
         self.source_address = source_address
@@ -559,6 +579,7 @@ class SpeedtestHTTPSHandler(AbstractHTTPHandler):
     """Custom ``HTTPSHandler`` that can build a ``HTTPSConnection`` with the
     args we need for ``source_address`` and ``timeout``
     """
+
     def __init__(self, debuglevel=0, context=None, source_address=None,
                  timeout=10):
         AbstractHTTPHandler.__init__(self, debuglevel)
@@ -623,6 +644,7 @@ class GzipDecodedResponse(GZIP_BASE):
     Largely copied from ``xmlrpclib``/``xmlrpc.client`` and modified
     to work for py2.4-py3
     """
+
     def __init__(self, response):
         # response doesn't support tell() and read(), required by
         # GzipFile
@@ -777,6 +799,7 @@ def print_dots(shutdown_event):
     """Built in callback function used by Thread classes for printing
     status
     """
+
     def inner(current, total, start=False, end=False):
         if event_is_set(shutdown_event):
             return
@@ -785,6 +808,7 @@ def print_dots(shutdown_event):
         if current + 1 == total and end is True:
             sys.stdout.write('\n')
         sys.stdout.flush()
+
     return inner
 
 
@@ -818,8 +842,8 @@ class HTTPDownloader(threading.Thread):
             if (timeit.default_timer() - self.starttime) <= self.timeout:
                 f = self._opener(self.request)
                 while (not event_is_set(self._shutdown_event) and
-                        (timeit.default_timer() - self.starttime) <=
-                        self.timeout):
+                       (timeit.default_timer() - self.starttime) <=
+                       self.timeout):
                     self.result.append(len(f.read(10240)))
                     if self.result[-1] == 0:
                         break
@@ -1582,7 +1606,7 @@ class Speedtest(object):
         stop = timeit.default_timer()
         self.results.bytes_received = sum(finished)
         self.results.download = (
-            (self.results.bytes_received / (stop - start)) * 8.0
+                (self.results.bytes_received / (stop - start)) * 8.0
         )
         if self.results.download > 100000:
             self.config['threads']['upload'] = 8
@@ -1676,7 +1700,7 @@ class Speedtest(object):
         stop = timeit.default_timer()
         self.results.bytes_sent = sum(finished)
         self.results.upload = (
-            (self.results.bytes_sent / (stop - start)) * 8.0
+                (self.results.bytes_sent / (stop - start)) * 8.0
         )
         return self.results.upload
 
@@ -1685,10 +1709,12 @@ def ctrl_c(shutdown_event):
     """Catch Ctrl-C key sequence and set a SHUTDOWN_EVENT for our threaded
     operations
     """
+
     def inner(signum, frame):
         shutdown_event.set()
         printer('\nCancelling...', error=True)
         sys.exit(0)
+
     return inner
 
 
@@ -1763,6 +1789,7 @@ def parse_args():
     parser.add_argument('--server', type=PARSER_TYPE_INT, action='append',
                         help='Specify a server ID to test against. Can be '
                              'supplied multiple times')
+    parser.add_argument('--server-url', help='Specify a server url to test against')
     parser.add_argument('--exclude', type=PARSER_TYPE_INT, action='append',
                         help='Exclude a server from selection. Can be '
                              'supplied multiple times')
@@ -1913,31 +1940,42 @@ def shell():
     printer('Testing from %(isp)s (%(ip)s)...' % speedtest.config['client'],
             quiet)
 
-    if not args.mini:
-        printer('Retrieving speedtest.net server list...', quiet)
-        try:
-            speedtest.get_servers(servers=args.server, exclude=args.exclude)
-        except NoMatchedServers:
-            raise SpeedtestCLIError(
-                'No matched servers: %s' %
-                ', '.join('%s' % s for s in args.server)
-            )
-        except (ServersRetrievalError,) + HTTP_ERRORS:
-            printer('Cannot retrieve speedtest server list', error=True)
-            raise SpeedtestCLIError(get_exception())
-        except InvalidServerIDType:
-            raise SpeedtestCLIError(
-                '%s is an invalid server type, must '
-                'be an int' % ', '.join('%s' % s for s in args.server)
-            )
+    if args.server_url:
+        speedtest.get_best_server([{
+            'sponsor': 'Speedtest Server URL',
+            'name': "special",
+            'd': 0,
+            'url': args.server_url,
+            'latency': 0,
+            'id': 0
+        }])
+        pass
+    else:
+        if not args.mini:
+            printer('Retrieving speedtest.net server list...', quiet)
+            try:
+                speedtest.get_servers(servers=args.server, exclude=args.exclude)
+            except NoMatchedServers:
+                raise SpeedtestCLIError(
+                    'No matched servers: %s' %
+                    ', '.join('%s' % s for s in args.server)
+                )
+            except (ServersRetrievalError,) + HTTP_ERRORS:
+                printer('Cannot retrieve speedtest server list', error=True)
+                raise SpeedtestCLIError(get_exception())
+            except InvalidServerIDType:
+                raise SpeedtestCLIError(
+                    '%s is an invalid server type, must '
+                    'be an int' % ', '.join('%s' % s for s in args.server)
+                )
 
-        if args.server and len(args.server) == 1:
-            printer('Retrieving information for the selected server...', quiet)
-        else:
-            printer('Selecting best server based on ping...', quiet)
-        speedtest.get_best_server()
-    elif args.mini:
-        speedtest.get_best_server(speedtest.set_mini_server(args.mini))
+            if args.server and len(args.server) == 1:
+                printer('Retrieving information for the selected server...', quiet)
+            else:
+                printer('Selecting best server based on ping...', quiet)
+            speedtest.get_best_server()
+        elif args.mini:
+            speedtest.get_best_server(speedtest.set_mini_server(args.mini))
 
     results = speedtest.results
 
